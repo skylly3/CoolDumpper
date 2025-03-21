@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "upx", "upx\cooldebug.vcxproj", "{8EEBE94A-8AE3-4FB9-96E4-923E57C4AEF9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "disasm", "disasm\disasm.vcxproj", "{301139AE-45A8-4E65-BA83-41C76012BD16}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CoolDumpper", "CoolDumpper\CoolDumpper.vcxproj", "{DC40230B-07EA-4153-BDB4-5E68B9300C9B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8EEBE94A-8AE3-4FB9-96E4-923E57C4AEF9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8EEBE94A-8AE3-4FB9-96E4-923E57C4AEF9}.Debug|Win32.Build.0 = Debug|Win32
+		{8EEBE94A-8AE3-4FB9-96E4-923E57C4AEF9}.Release|Win32.ActiveCfg = Release|Win32
+		{8EEBE94A-8AE3-4FB9-96E4-923E57C4AEF9}.Release|Win32.Build.0 = Release|Win32
+		{301139AE-45A8-4E65-BA83-41C76012BD16}.Debug|Win32.ActiveCfg = Debug|Win32
+		{301139AE-45A8-4E65-BA83-41C76012BD16}.Debug|Win32.Build.0 = Debug|Win32
+		{301139AE-45A8-4E65-BA83-41C76012BD16}.Release|Win32.ActiveCfg = Release|Win32
+		{301139AE-45A8-4E65-BA83-41C76012BD16}.Release|Win32.Build.0 = Release|Win32
+		{DC40230B-07EA-4153-BDB4-5E68B9300C9B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DC40230B-07EA-4153-BDB4-5E68B9300C9B}.Debug|Win32.Build.0 = Debug|Win32
+		{DC40230B-07EA-4153-BDB4-5E68B9300C9B}.Release|Win32.ActiveCfg = Release|Win32
+		{DC40230B-07EA-4153-BDB4-5E68B9300C9B}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

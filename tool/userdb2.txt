@@ -1,0 +1,51 @@
+[FeatureCode_1 “——È÷§]
+signature = 55 8B EC 6A FF 68 ?? ?? ?? ?? 68 ?? ?? ?? ?? 64 A1 00 00 00 00 50 64 89 25 00 00 00 00 83 ?? ?? 53 56 57 89 65 E8 ?? ??
+ep_only = true
+
+[FeatureCode_2]
+signature = 6A 00 68 00 00 00 00 E8 00 00 00 00 BF 00 00 00 00 8B C7 E8 00 00 00 00 89 65 00 8B F4 89 3E 56 FF 15 00 00
+ep_only = true
+
+[FeatureCode_3]
+signature = 64 A1 00 00 00 00 55 8B EC 6A FF 68 00 00 00 00 68 00 00 00 00 50 64 89 25 00 00 00 00 83 EC 00
+ep_only = true
+
+[FeatureCode_4]
+signature = 64 A1 00 00 00 00 55 89 E5 6A FF 68 00 00 00 00 68 9A 10 40 00 50 64 89 25 00 00 00 00 83 00 00
+ep_only = true
+
+[FeatureCode_5]
+signature = A1 00 00 00 00 C1 E0 02 A3 00 00 00 00 57 51 33 C0 BF 00 00 00 00 B9 00 00 00 00 3B CF 76 05 2B CF FC F3 AA 59 5F 00 00
+ep_only = true
+
+[FeatureCode_6]
+signature = EB 10 66 62 3A 43 2B 2B 48 4F 4F 4B 90 E9 00 00 00 00 A1 00 00 00 00 C1 E0 02 A3 00 00 00 00 52
+ep_only = true
+
+[FeatureCode_7]
+signature = 53 51 52 55 89 E5 83 EC 08 B8 01 00 00 00 E8 00 00 00 00 A1 00 00 00 00 83 C0 03
+ep_only = true
+
+[FeatureCode_8]
+signature = 55 8B EC 83 EC 44 56 FF 15 00 00 00 00 8B F0 8A 00 3C 22
+ep_only = true
+
+[FeatureCode_9]
+signature = FF 25 00 00 00 00 FF 25 00 00 00 00 00 00 68 00 00 00 00 E8 00 00 FF FF 00 00 00 00 00 00
+ep_only = true
+
+[FeatureCode_10]
+signature = FF 25 00 00 00 00 FF 25 00 00 00 00 68 00 00 00 00 E8 00 00 FF FF 00 00 00 00 00 00
+ep_only = true
+
+[FeatureCode_11]
+signature = 55 8B EC 83 C4
+ep_only = true
+
+[FeatureCode_12]
+signature = 6A 00 E8 00 00 00 00 A3
+ep_only = true
+
+[FeatureCode_13]
+signature = 6A 70 68 00 00 00 00 E8
+ep_only = true

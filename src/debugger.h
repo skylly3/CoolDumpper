@@ -4,7 +4,14 @@
 const DWORD WM_PLUGINMSG_START = WM_USER + 100;						//消息开始
 const DWORD WM_SENDSTRING = WM_USER + 101;							//发送字符消息
 const DWORD WM_TERMINATE = WM_USER + 102;							//结束脱壳进程
+const DWORD WM_DEL_SECTION = WM_USER + 107;                         //移除区段
+const DWORD WM_IMPFIX_MODE = WM_USER + 108;                         //插件修复模式选择
+const DWORD WM_REBUILD_RES = WM_USER + 111;                         //重建资源
+
 const DWORD WM_DUMPNOW = WM_USER + 105;         					//请求DUMP
+
+
+
 
 const DWORD WM_PLUGINMSG_END = WM_USER + 300;						//消息结束
 

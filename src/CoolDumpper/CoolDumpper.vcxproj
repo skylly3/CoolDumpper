@@ -81,9 +81,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\debugger.h" />
     <ClInclude Include="CoolDumpper.h" />
     <ClInclude Include="Resource.h" />

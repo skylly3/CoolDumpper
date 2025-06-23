@@ -2421,6 +2421,37 @@ BOOL CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+	case WM_DEL_SECTION:
+	{
+		std::wstring str = format(L"设置移除区段数:%d", wParam);
+		OutText(str);
+
+		HWND hEdtDelSec = GetDlgItem(m_hWnd, IDC_EDT_DELSECTION);
+
+		std::wstring strNum = format(L"%d", wParam);
+		SendMessage(hEdtDelSec, WM_SETTEXT, 0, (LPARAM)strNum.c_str());
+		break;
+	}
+	case WM_IMPFIX_MODE:
+	{
+		std::wstring str = format(L"设置输入表修复方式:%d", wParam);
+		OutText(str);
+
+		HWND comboBoxHandle = GetDlgItem(m_hWnd, IDC_CM_IAT);
+		int selectedIndex = SendMessage(comboBoxHandle, CB_SETCURSEL, wParam, 0);
+		break;
+	}
+	case WM_REBUILD_RES:
+	{
+		std::wstring str = format(L"设置重建资源");
+		OutText(str);
+
+		HWND hCheckbox = GetDlgItem(m_hWnd, IDC_CHECK_FIXRES);
+		SendMessage(hCheckbox, BM_SETCHECK, BST_CHECKED, 0);
+
+ 
+		break;
+	}
 	default:
 		//return DefWindowProc(hWnd, message, wParam, lParam);
 		break;

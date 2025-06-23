@@ -101,9 +101,6 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="asmserv.cpp" />
     <ClCompile Include="assembl.cpp" />
     <ClCompile Include="disasm.cpp" />

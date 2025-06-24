@@ -1,9 +1,0 @@
-; cooldebug.def : Declares the module parameters for the DLL.
-
-;DESCRIPTION  'cooldebug Windows Dynamic Link Library'
-
-EXPORTS
-	StartUnpack
-	AboutPlugin
-	InitPlugin
-    ; Explicit exports can go here

@@ -1,4 +1,5 @@
 ﻿#include "stdafx.h"
+#include "../undoc.h"
 #include "CoolDumpper.h"
 #include <tlhelp32.h>
 #include <CommCtrl.h>   //listview控件
@@ -9,6 +10,8 @@
 #include <vector>
 
 #include "../disasm/disasm.h"
+
+
 #include "../debugger.h"
 
 #define MAX_LOADSTRING 100
@@ -1579,6 +1582,20 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 		&startupInfo,
 		&m_pi
 	)) {
+
+		HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
+		pNtQueryInformationProcess NtQueryInformationProcess =
+			(pNtQueryInformationProcess)GetProcAddress(hNtdll, "NtQueryInformationProcess");
+		// 获取进程基本信息
+		PROCESS_BASIC_INFORMATION pbi = { 0 };
+		LONG status = NtQueryInformationProcess(
+			m_pi.hProcess, 0, &pbi, sizeof(pbi), NULL
+		);
+		PVOID imageBaseAddress = NULL;
+		ReadProcessMemory(m_pi.hProcess, (LPCVOID)((LPBYTE)pbi.PebBaseAddress + 0x08), &imageBaseAddress, sizeof(PVOID), NULL);
+
+		m_dwImageBase = (DWORD)imageBaseAddress;  //修正imagebase(某些exe开启了动态基址时)
+
 		if (m_hModPlugin && strDllFile)
 		{//插件模式
 			// 在目标进程中分配内存以存储DLL路径
@@ -1591,6 +1608,7 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 			HANDLE hThread = CreateRemoteThread(m_pi.hProcess, nullptr, 0,
 				reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryW), remoteMemory, 0, nullptr);
 
+		
 			//调用插件的脱壳接口
 			startUnpackFunc(m_pi, m_dwImageBase, m_dwImageBase + m_dwEpRva);
 

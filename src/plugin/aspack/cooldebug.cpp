@@ -11,14 +11,9 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-
-//关键脱壳函数
+//关键函数
 extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, DWORD dwEntryPoint)
 {	
-	//dwBaseAddress = (DWORD)GetModuleHandle(NULL);
-	//dwEntryPoint += dwBaseAddress;
-
-
 	DWORD dwPid = pi.dwProcessId;
 	DWORD dwTid = pi.dwThreadId;
 	HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);
@@ -27,39 +22,45 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	assert(hThread);
 	//发消息表示开始脱壳
 	TellUnpacker(g_szStartUnpack);
-	UCHAR szIatCode[] = {0x50, 0x83, 0xC7};
-	DWORD dwNewEip =  FindMemory(hProcess, dwEntryPoint, szIatCode, sizeof(szIatCode));
+	
+	CONTEXT context;
+	context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+	BOOL bOk = ::GetThreadContext(hThread, &context);
+	//assert(bOk);
+	if (!bOk)
+	{
+		TellUnpacker("GetThreadContext fail");
+	}
+
+	TCHAR msg[100];
+	sprintf(msg, "eip:%8x entry:%8x", context.Eip, dwEntryPoint);
+	TellUnpacker(msg);
+
+	UCHAR szIatCode[] = { 0x8B, 0x18, 0x8B, 0x7E, 0x10, 0x03, 0xFA };
+	DWORD dwNewEip = FindMemory(hProcess, dwEntryPoint, szIatCode, sizeof(szIatCode));
 	if (0 == dwNewEip)
-	{ 
+	{
 		TellUnpacker(g_szError);
 		return Terminate(hProcess, hThread);
 	}
-	CONTEXT context;
-	GO(hProcess, hThread, dwNewEip, context);
-	DWORD dwIAT = context.Ebx;
+	GO(hProcess, hThread, dwNewEip+7, context);
+	DWORD dwIAT = context.Edi;
 
-	UCHAR szMagicCode[] = {0x61, 0xE9};
-	int iAdd = 1;
-	DWORD dwCoolEip = FindMemory(hProcess, dwNewEip, szMagicCode, sizeof(szMagicCode), 0x1000);
+	UCHAR szMagicCode[] = {0x61, 0x75, 0x08, 0xB8, 0x01, 0x00, 0x00, 0x00};
+	DWORD dwCoolEip = FindMemory(hProcess, dwEntryPoint-1, szMagicCode, sizeof(szMagicCode), 0x1000);
 	if (0 == dwCoolEip)
 	{	
-		UCHAR szMagicCode[] = {0x6A, 0x00};
-		dwCoolEip = FindMemory(hProcess, dwNewEip, szMagicCode, sizeof(szMagicCode), 0x100);
-		if (0 == dwCoolEip)
-		{
-			UCHAR szMagicCode[] = {0x60, 0xE9};
-			dwCoolEip = FindMemory(hProcess, dwNewEip, szMagicCode, sizeof(szMagicCode), 0x100);
-			if (0 == dwCoolEip)
-			{
-				TellUnpacker(g_szError);
-				return  Terminate(hProcess, hThread);
-			}
-		}
-		else
-			iAdd = 9;
+
+		TellUnpacker(g_szError);
+		return  Terminate(hProcess, hThread);
 	}
-	GO(hProcess, hThread, dwCoolEip, context);
-	DWORD dwOep = ReadAJump(hProcess, dwCoolEip + iAdd);
+	GO(hProcess, hThread, dwCoolEip+1, context);
+
+	DWORD dwOep = 0;
+	DWORD dwRead = 0;
+	ReadMemory(hProcess, dwCoolEip + 12, &dwOep, 4, &dwRead);
+ 
+	
 	DumeNow(dwOep, dwIAT);
 
 	TellUnpacker(g_szOK);

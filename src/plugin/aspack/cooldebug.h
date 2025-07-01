@@ -7,7 +7,7 @@ HINSTANCE g_hDLL = NULL;		    //DLL 的instance
 HWND  g_hWndList = NULL;			//脱壳机窗口
 TCHAR g_szNewMsg[256];				//消息缓存
 TCHAR g_szBackCode[256];			//代码备份
-TCHAR g_szAboutMe[MAX_BUFFER] = "UPX插件:";
+TCHAR g_szAboutMe[MAX_BUFFER] = "ASPACK插件:";
 TCHAR g_szVersion[MAX_BUFFER] = "Ver 0.2 ";
 TCHAR g_szStartUnpack[MAX_BUFFER] = "Start Unpacking...";
 TCHAR g_szInitOk[MAX_BUFFER] = "初始化完毕!";

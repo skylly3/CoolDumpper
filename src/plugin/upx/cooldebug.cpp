@@ -1,8 +1,6 @@
 // cooldebug.cpp : Defines the initialization routines for the DLL.
 //
-
 #include "stdafx.h"
-//#include <afxdllx.h>
 #include "cooldebug.h"
 
 #ifdef _DEBUG
@@ -11,14 +9,9 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-
 //¹Ø¼üÍÑ¿Çº¯Êý
 extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, DWORD dwEntryPoint)
 {	
-	//dwBaseAddress = (DWORD)GetModuleHandle(NULL);
-	//dwEntryPoint += dwBaseAddress;
-
-
 	DWORD dwPid = pi.dwProcessId;
 	DWORD dwTid = pi.dwThreadId;
 	HANDLE hProcess = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, dwPid);

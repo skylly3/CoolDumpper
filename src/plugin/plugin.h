@@ -120,5 +120,8 @@ extern "C" void WINAPI InitPlugin(HWND hWnd)
 	TellUnpacker(g_szInitOk);
 	HWND hWndDebug = ::GetDlgItem(g_hWndList, IDC_CHECK_DEBUGGER);
 	assert(hWndDebug);
-	::SendMessage(hWndDebug, BM_SETCHECK, 0, 0);
+	::SendMessage(hWndDebug, BM_SETCHECK, BST_CHECKED, 0);
+
+
+	SendMsg(WM_IMPFIX_MODE, 1, 0);
 }

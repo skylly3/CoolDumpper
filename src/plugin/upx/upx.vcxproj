@@ -157,14 +157,10 @@
     <ResourceCompile Include="cooldebug.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\debugger.h" />
     <ClInclude Include="..\plugin.h" />
     <ClInclude Include="cooldebug.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StdAfx.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

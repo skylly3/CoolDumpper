@@ -334,8 +334,8 @@ std::wstring format(const wchar_t* fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
-	wchar_t buf[2048];
-	vswprintf(buf, 2048, fmt, ap);
+	wchar_t buf[1024];
+	vswprintf(buf, 1024, fmt, ap);
 	va_end(ap);
 	std::wstring str = std::wstring(buf);
 	return str;
@@ -873,6 +873,85 @@ BOOL CopyThePEHead(HWND hDlg, DWORD dwPID, LPCTSTR Dump_Name, const DWORD dwOepR
 	return TRUE;
 }
 
+// 修改PE文件IAT的RVA偏移
+BOOL ModifyIATOffset(LPCTSTR filePath, DWORD newIATRVA, DWORD newIATSize) {
+    HANDLE hFile, hMapFile;
+    LPVOID lpBaseAddress = NULL;
+    IMAGE_DOS_HEADER* pDosHeader;
+    IMAGE_NT_HEADERS* pNtHeaders;
+    BOOL bResult = FALSE;
+
+    // 打开文件
+    hFile = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE, 
+                        FILE_SHARE_READ, NULL, OPEN_EXISTING, 
+                        FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        printf("无法打开文件: %s (错误码: %d)\n", filePath, GetLastError());
+        return FALSE;
+    }
+
+    // 创建文件映射
+    hMapFile = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, 0, NULL);
+    if (hMapFile == NULL) {
+        printf("创建文件映射失败 (错误码: %d)\n", GetLastError());
+        CloseHandle(hFile);
+        return FALSE;
+    }
+
+    // 映射视图
+    lpBaseAddress = MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    if (lpBaseAddress == NULL) {
+        printf("映射文件视图失败 (错误码: %d)\n", GetLastError());
+        CloseHandle(hMapFile);
+        CloseHandle(hFile);
+        return FALSE;
+    }
+
+    // 验证DOS头
+    pDosHeader = (IMAGE_DOS_HEADER*)lpBaseAddress;
+    if (pDosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+        printf("不是有效的PE文件 (DOS签名错误)\n");
+        goto Cleanup;
+    }
+
+    // 验证NT头
+    pNtHeaders = (IMAGE_NT_HEADERS*)((BYTE*)lpBaseAddress + pDosHeader->e_lfanew);
+    if (pNtHeaders->Signature != IMAGE_NT_SIGNATURE) {
+        printf("不是有效的PE文件 (NT签名错误)\n");
+        goto Cleanup;
+    }
+
+    // 获取原始IAT信息
+    IMAGE_DATA_DIRECTORY* iatDirectory = &pNtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+    DWORD originalIATRVA = iatDirectory->VirtualAddress;
+    DWORD iatSize = iatDirectory->Size;
+
+    printf("原始IAT RVA: 0x%08X\n", originalIATRVA);
+    printf("IAT 大小: 0x%08X 字节\n", iatSize);
+
+    // 修改IAT的RVA
+    iatDirectory->VirtualAddress = newIATRVA;
+	iatDirectory->Size = newIATSize;
+    printf("新IAT RVA: 0x%08X\n", newIATRVA);
+
+    // 确保修改写入磁盘
+    if (!FlushViewOfFile(lpBaseAddress, 0)) {
+        printf("刷新文件视图失败 (错误码: %d)\n", GetLastError());
+        goto Cleanup;
+    }
+
+    bResult = TRUE;
+    printf("IAT偏移修改成功!\n");
+
+Cleanup:
+    // 清理资源
+    if (lpBaseAddress) UnmapViewOfFile(lpBaseAddress);
+    if (hMapFile) CloseHandle(hMapFile);
+    if (hFile) CloseHandle(hFile);
+
+    return bResult;
+}
+
 //修复节表，按内存中的大小对齐
 BOOL ModifySectionFunc(HWND hDlg, LPCTSTR Dump_Name)
 {
@@ -948,6 +1027,8 @@ BOOL CreateDumpFile(HWND hDlg, DWORD IDProcess, LPCTSTR Dump_Name, HGLOBAL hMem,
 		//节表对齐
 		MessageBox(hDlg, TEXT("修改节表失败了"), TEXT("失败了"), MB_OK | MB_ICONWARNING);
 	}
+
+
 	//MessageBox(hDlg,TEXT("文件已经dump成功"),TEXT("Lenus'ExeDump"),MB_OK | MB_ICONINFORMATION);//胜利的号角！	
 	return TRUE;
 }
@@ -1118,6 +1199,8 @@ struct tagDumpPara
 	HANDLE hThread;             //线程句柄
 	DWORD dwOepVA;			    //入口点VA
 	DWORD dwIatVA;				//IAt VA
+	DWORD dwItdVA;				//ITD VA
+	DWORD dwItdSize;			//ITD size
 };
 tagDumpPara g_dumpPara;
 
@@ -1355,7 +1438,7 @@ BOOL DumpFunc(HWND hDlg, HANDLE hProcess, HANDLE hThread, DWORD dwPID, DWORD dwO
 						}
 						else
 						{//插件修复,loader实质不处理
-
+							ModifyIATOffset(Dump_Name.c_str(), g_dumpPara.dwItdVA, g_dumpPara.dwItdSize);
 						}
 
 					}//创建dump文件成功
@@ -1988,14 +2071,15 @@ LRESULT OnTerminate(WPARAM wParam, LPARAM lParam)
 
 LRESULT OnDumpNow(WPARAM wParam, LPARAM lParam)
 {
-	if (wParam)
+	//if (wParam)
 	{
-		DWORD dwOepVA = wParam;
-		DWORD dwIatVA = lParam;
-		std::wstring str = format(L"开始Dump OEP VA=%08x IAT VA=%08x", dwOepVA, dwIatVA);
+		g_dumpPara.dwItdVA = wParam;
+		g_dumpPara.dwItdSize = lParam;
+
+		std::wstring str = format(L"开始Dump OEP VA=%08x IAT VA=%08x ITD VA=%08x, size=%08x", g_dumpPara.dwOepVA, g_dumpPara.dwIatVA, g_dumpPara.dwItdVA, g_dumpPara.dwItdSize);
 		OutText(str);
 
-		DumpFunc(m_hWnd, m_pi.hProcess, m_pi.hThread, m_pi.dwProcessId, dwOepVA - m_dwImageBase, dwIatVA - m_dwImageBase);
+		DumpFunc(m_hWnd, m_pi.hProcess, m_pi.hThread, m_pi.dwProcessId, g_dumpPara.dwOepVA - m_dwImageBase, g_dumpPara.dwIatVA - m_dwImageBase);
 
 		//结束进程
 		OnTerminate(0, 0);
@@ -2470,9 +2554,27 @@ BOOL CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
  
 		break;
 	}
-	default:
-		//return DefWindowProc(hWnd, message, wParam, lParam);
+	case WM_TELL_OEP:
+	{
+		g_dumpPara.dwOepVA = wParam;
+		g_dumpPara.dwIatVA = lParam;
+
+		std::wstring str = format(L"设置OEP:0x%08x IAT:0x%08x BaseAddr:0x%08x", g_dumpPara.dwOepVA, g_dumpPara.dwIatVA, m_dwImageBase);
+		OutText(str);
 		break;
+	}
+	default:
+	{	
+		if (message > WM_USER)
+		{
+			std::wstring str = format(L"未知消息:0x%08x", message);
+			OutText(str);
+		}
+
+		break;
+	}
+		//return DefWindowProc(hWnd, message, wParam, lParam);
+
 	}
 	return FALSE;
 }

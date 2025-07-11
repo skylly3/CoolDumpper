@@ -1,40 +1,28 @@
-#include "../debugger.h"
-#include <string>
 
-//底层消息是实现
-void SendMsg(UINT uMsg, WPARAM wParam, LPARAM lParam, HWND hWnd = g_hWndList)
+
+//下断点--内部方法
+void BP(HANDLE hProcess, DWORD dwAddress)
 {
-	if (hWnd != NULL)
-		::SendMessage(hWnd, uMsg, wParam, lParam);
-}
-//向脱壳机传递字符串
-void TellUnpacker(std::string strMsg)
-{
-	::ZeroMemory(g_szNewMsg, 256);
-	strcat(g_szNewMsg, g_szAboutMe);
-	strcat(g_szNewMsg, strMsg.c_str());
-	static    char   *pStr = g_szNewMsg;
-	SendMsg(WM_SENDSTRING, (WPARAM)pStr, 0);
+	UCHAR szHalt[] = { 0xEB, 0xFE };
+	DWORD dwRead;
+	ReadMemory(hProcess, dwAddress, g_szBackCode, 2, &dwRead);
+	WriteMemory(hProcess, (LPVOID)dwAddress, szHalt, 2, &dwRead);
 }
 
-//向脱壳机表示结束脱壳过程并进行适当清理
-void Terminate(HANDLE hProcess, HANDLE hThread)
+//清断点--内部方法
+void BC(HANDLE hProcess, DWORD dwAddress)
 {
-	::CloseHandle(hProcess);
-	::CloseHandle(hThread);
-	SendMsg(WM_TERMINATE, 0, 0);
+	UCHAR szHalt[] = { 0xEB, 0xFE };
+	DWORD dwRead;
+	WriteMemory(hProcess, (LPVOID)dwAddress, g_szBackCode, 2, &dwRead);
+	//ASSERT(bOk);
 }
+
 //向脱壳机表示继续进程
 void Resume(HANDLE hThread)
 {
 	//继续目标进程
 	::ResumeThread(hThread);
-}
-
-//向脱壳机表示dump
-void DumeNow(DWORD dwOEP = 0, DWORD dwIAT = 0)
-{
-	SendMsg(WM_DUMPNOW, (WPARAM)dwOEP, (LPARAM)dwIAT);
 }
 
 //向脱壳机表示暂停
@@ -46,24 +34,6 @@ CONTEXT Halt(HANDLE hThread)
 	BOOL bOk = ::GetThreadContext(hThread, &context);
 	assert(bOk);
 	return context;
-}
-
-//下断点--内部方法
-void BP(HANDLE hProcess, DWORD dwAddress)
-{
-	UCHAR szHalt[] = {0xEB, 0xFE};
-	DWORD dwRead;
-    ReadMemory(hProcess, dwAddress, g_szBackCode, 2, &dwRead);
-	WriteMemory(hProcess, (LPVOID)dwAddress, szHalt, 2, &dwRead);
-}
-
-//清断点--内部方法
-void BC(HANDLE hProcess, DWORD dwAddress)
-{
-	UCHAR szHalt[] = {0xEB, 0xFE};
-	DWORD dwRead;
-	WriteMemory(hProcess, (LPVOID)dwAddress, g_szBackCode, 2, &dwRead);
-	//ASSERT(bOk);
 }
 
 //到指定地址--内部方法
@@ -107,21 +77,39 @@ bool RTU(HANDLE hProcess, HANDLE hThread, CONTEXT& context)
 	return true;
 }
 
-//关于插件--API
-extern "C" void WINAPI AboutPlugin()
-{	
-	TellUnpacker(g_szVersion);
+//底层消息是实现
+void SendMsg(UINT uMsg, WPARAM wParam, LPARAM lParam, HWND hWnd = g_hWndList)
+{
+	if (hWnd != NULL)
+		::SendMessage(hWnd, uMsg, wParam, lParam);
 }
 
-//初始化--API
-extern "C" void WINAPI InitPlugin(HWND hWnd)
+//向脱壳机表示结束脱壳过程并进行适当清理
+void Terminate(HANDLE hProcess, HANDLE hThread)
 {
-	g_hWndList = hWnd;
-	TellUnpacker(g_szInitOk);
-	HWND hWndDebug = ::GetDlgItem(g_hWndList, IDC_CHECK_DEBUGGER);
-	assert(hWndDebug);
-	::SendMessage(hWndDebug, BM_SETCHECK, BST_CHECKED, 0);
+	::CloseHandle(hProcess);
+	::CloseHandle(hThread);
+	SendMsg(WM_TERMINATE, 0, 0);
+}
 
+//向脱壳机表示dump
+void DumeNow(DWORD dwIdt = 0, DWORD dwIdtSize = 0)
+{
+	SendMsg(WM_DUMPNOW, (WPARAM)dwIdt, (LPARAM)dwIdtSize);
+}
 
-	SendMsg(WM_IMPFIX_MODE, 1, 0);
+//向脱壳机传递字符串
+void TellUnpacker(std::string strMsg)
+{
+	::ZeroMemory(g_szNewMsg, 256);
+	strcat(g_szNewMsg, g_szAboutMe);
+	strcat(g_szNewMsg, strMsg.c_str());
+	static    char   *pStr = g_szNewMsg;
+	SendMsg(WM_SENDSTRING, (WPARAM)pStr, 0);
+}
+
+//关于插件--API
+extern "C" void WINAPI AboutPlugin()
+{
+	TellUnpacker(g_szVersion);
 }

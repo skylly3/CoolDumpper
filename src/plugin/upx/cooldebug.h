@@ -15,4 +15,5 @@ TCHAR g_szError[MAX_BUFFER] = "你选错插件了吧!";
 TCHAR g_szOK[MAX_BUFFER] = "你是最棒的!";
 #pragma data_seg ()
 
+#include "../../debugger.h"
 #include "../plugin.h"

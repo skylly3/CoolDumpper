@@ -9,6 +9,18 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
+//初始化--API
+extern "C" void WINAPI InitPlugin(HWND hWnd)
+{
+	g_hWndList = hWnd;
+	TellUnpacker(g_szInitOk);
+	HWND hWndDebug = ::GetDlgItem(g_hWndList, IDC_CHECK_DEBUGGER);
+	assert(hWndDebug);
+	::SendMessage(hWndDebug, BM_SETCHECK, BST_CHECKED, 0);
+
+	SendMsg(WM_IMPFIX_MODE, 1, 0);
+}
+
 //关键脱壳函数
 extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, DWORD dwEntryPoint)
 {	
@@ -18,8 +30,10 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	HANDLE hThread = ::OpenThread(THREAD_ALL_ACCESS, FALSE, dwTid);
 	assert(hProcess);
 	assert(hThread);
+
 	//发消息表示开始脱壳
 	TellUnpacker(g_szStartUnpack);
+
 	UCHAR szIatCode[] = {0x50, 0x83, 0xC7};
 	DWORD dwNewEip =  FindMemory(hProcess, dwEntryPoint, szIatCode, sizeof(szIatCode));
 	if (0 == dwNewEip)
@@ -53,7 +67,9 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	}
 	GO(hProcess, hThread, dwCoolEip, context);
 	DWORD dwOep = ReadAJump(hProcess, dwCoolEip + iAdd);
-	DumeNow(dwOep, dwIAT);
+
+	SendMsg(WM_TELL_OEP, (WPARAM)dwOep, (LPARAM)dwIAT);
+	DumeNow(0, 0);
 
 	TellUnpacker(g_szOK);
 	return  Terminate(hProcess, hThread);

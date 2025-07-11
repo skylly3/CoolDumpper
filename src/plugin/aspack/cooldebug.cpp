@@ -1,6 +1,5 @@
 // cooldebug.cpp : Defines the initialization routines for the DLL.
 //
-
 #include "stdafx.h"
 //#include <afxdllx.h>
 #include "cooldebug.h"
@@ -10,6 +9,18 @@
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
 #endif
+
+//初始化--API
+extern "C" void WINAPI InitPlugin(HWND hWnd)
+{
+	g_hWndList = hWnd;
+	TellUnpacker(g_szInitOk);
+	HWND hWndDebug = ::GetDlgItem(g_hWndList, IDC_CHECK_DEBUGGER);
+	assert(hWndDebug);
+	::SendMessage(hWndDebug, BM_SETCHECK, BST_CHECKED, 0);
+
+	SendMsg(WM_IMPFIX_MODE, 2, 0);
+}
 
 //关键函数
 extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, DWORD dwEntryPoint)
@@ -44,7 +55,17 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 		return Terminate(hProcess, hThread);
 	}
 	GO(hProcess, hThread, dwNewEip+7, context);
-	DWORD dwIAT = context.Edi;
+	DWORD dwIatVA = context.Edi;
+	sprintf(msg, "eip:%8x esi:%8x", context.Eip, context.Esi- dwBaseAddress);
+	TellUnpacker(msg);
+	
+	SendMsg(WM_TELL_OEP, (WPARAM)dwBaseAddress + 0x11d2, (LPARAM)dwIatVA);
+	
+	DumeNow(0xf0b4, 0xc4);
+
+	TellUnpacker(g_szOK);
+	return  Terminate(hProcess, hThread);
+
 
 	UCHAR szMagicCode[] = {0x61, 0x75, 0x08, 0xB8, 0x01, 0x00, 0x00, 0x00};
 	DWORD dwCoolEip = FindMemory(hProcess, dwEntryPoint-1, szMagicCode, sizeof(szMagicCode), 0x1000);
@@ -61,7 +82,7 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	ReadMemory(hProcess, dwCoolEip + 12, &dwOep, 4, &dwRead);
  
 	
-	DumeNow(dwOep, dwIAT);
+	DumeNow(0xf0b4, 0xc4);
 
 	TellUnpacker(g_szOK);
 	return  Terminate(hProcess, hThread);

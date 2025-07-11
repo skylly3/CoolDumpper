@@ -157,7 +157,6 @@
     <ResourceCompile Include="cooldebug.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\plugin.h" />
     <ClInclude Include="cooldebug.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StdAfx.h" />

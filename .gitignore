@@ -8,6 +8,10 @@
 *.pdb
 *.iobj
 *.ipdb
+*.tlog
+*.lastbuildstate
+*.exp
+*.aps
 Debug/
 Release/
 bin/

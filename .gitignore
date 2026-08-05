@@ -1,3 +1,11 @@
+# Visual Studio 本地配置
+src/.vs/
+
+# Visual Studio IntelliSense 数据库
+*.VC.db
+*.VC.opendb
+*.sdf
+
 # 编译中间文件
 *.ilk
 *.obj

@@ -1,4 +1,0 @@
-﻿cooldebug.obj : warning LNK4075: 忽略“/EDITANDCONTINUE”(由于“/OPT:LBR”规范)
-    正在创建库 .\Debug/cooldebug.lib 和对象 .\Debug/cooldebug.exp
-  upx.vcxproj -> D:\CoolDumpper\src\plugin\upx\..\..\..\plugin\upx.dll
-  upx.vcxproj -> .\Debug/cooldebug.pdb (Full PDB)

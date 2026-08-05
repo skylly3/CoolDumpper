@@ -1,5 +1,14 @@
-"*.pdb" 
-"*.iobj" 
-"*.ipdb" 
-"Debug/" 
-"Release/" 
+# 编译中间文件
+*.ilk
+*.obj
+*.exe
+*.pch
+*.idb
+*.log
+*.pdb
+*.iobj
+*.ipdb
+Debug/
+Release/
+bin/
+obj/

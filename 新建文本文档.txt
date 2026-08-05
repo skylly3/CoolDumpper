@@ -1,0 +1,165 @@
+int __stdcall StartUnpack(int a1, int a2, int a3, int a4, int a5, LPCSTR *a6)
+{
+  HANDLE v6; // ebx
+  HANDLE v7; // edi
+  const CHAR *v8; // ecx
+  FARPROC v9; // esi
+  char *v10; // eax
+  const CHAR *v11; // ecx
+  char *v12; // eax
+  const CHAR *v13; // ecx
+  char *v14; // eax
+  char *v15; // eax
+  int v16; // eax
+  const CHAR *v17; // ecx
+  DWORD v18; // ebx
+  LPARAM v19; // ebx
+  char *v20; // eax
+  const CHAR *v21; // ecx
+  char *v22; // eax
+  void *v23; // eax
+  char *v24; // eax
+  const CHAR *v25; // ecx
+  DWORD Eax; // esi
+  LPCSTR lpProcName[5]; // [esp+4h] [ebp-494h] BYREF
+  char v29[352]; // [esp+18h] [ebp-480h] BYREF
+  CONTEXT Context; // [esp+178h] [ebp-320h] BYREF
+  int v31[7]; // [esp+444h] [ebp-54h] BYREF
+  SIZE_T NumberOfBytesWritten; // [esp+460h] [ebp-38h] BYREF
+  char Buffer[8]; // [esp+464h] [ebp-34h] BYREF
+  char v34[8]; // [esp+46Ch] [ebp-2Ch] BYREF
+  char v35[8]; // [esp+474h] [ebp-24h] BYREF
+  char v36[4]; // [esp+47Ch] [ebp-1Ch] BYREF
+  char v37[4]; // [esp+480h] [ebp-18h] BYREF
+  char Buf2[4]; // [esp+484h] [ebp-14h] BYREF
+  WPARAM Esi; // [esp+488h] [ebp-10h]
+  char v40[2]; // [esp+48Ch] [ebp-Ch] BYREF
+  char v41[2]; // [esp+48Eh] [ebp-Ah] BYREF
+  HANDLE hThread; // [esp+490h] [ebp-8h]
+  LPARAM lParam; // [esp+494h] [ebp-4h]
+
+  ((void (__stdcall *)(int *, __int16))sub_10001D32)(&a1, a5);
+  v6 = ::hThread;
+  v7 = hProcess;
+  lpProcName[0] = v8;
+  hThread = ::hThread;
+  lParam = (LPARAM)lpProcName;
+  MFC42_537(lpProcName, (int)&unk_10003208);
+  sub_100013D5((char *)lpProcName[0]);
+  v9 = GetProcAddr(aKernel32Dll_0, aVirtualfree);
+  GOAddr(v7, v6, v9, &Context);
+  RTU(v7, v6, &Context);
+  GOAddr(v7, v6, v9, &Context);
+  RTU(v7, v6, &Context);
+
+  Buf2[0] = 0x8B;
+  Buf2[1] = 0x46;
+  Buf2[2] = 0xC;
+  v10 = FindMemory(v7, (char *)Context.Eip, Buf2, 3u, 0x500u);
+  if ( v10 )
+  {
+    GOAddr(v7, v6, v10, &Context);
+    Esi = Context.Esi;
+    HIWORD(a5) = 1673;
+    memset(Buffer, 0x90, sizeof(Buffer));
+    v12 = FindMemory(v7, (char *)Context.Eip, (char *)&a5 + 2, 2u, 0x500u);
+    if ( !v12 )
+    {
+      lpProcName[0] = v13;
+      a6 = lpProcName;
+      goto LABEL_13;
+    }
+    WriteMemory(v7, v12, Buffer, 8u, &NumberOfBytesWritten);
+    v35[2] = 0;
+    v35[3] = 0;
+    v35[4] = 0;
+    v35[5] = 0;
+    v35[0] = 0xC7;
+    v35[1] = 3;
+    memset(v34, 144, 6);
+    v14 = FindMemory(v7, (char *)Context.Eip, v35, 6u, 0x500u);
+    if ( v14 )
+      WriteMemory(v7, v14, v34, 6u, &NumberOfBytesWritten);
+    v41[0] = -119;
+    v41[1] = 7;
+    memset(v40, 144, sizeof(v40));
+    v15 = FindMemory(v7, (char *)Context.Eip, v41, 2u, 0x500u);
+    lParam = (LPARAM)v15;
+    if ( v15 )
+    {
+      if ( a6 == (LPCSTR *)2 )
+        WriteMemory(v7, v15, v40, 2u, &NumberOfBytesWritten);
+      GOAddr(v7, v6, (LPVOID)lParam, &Context);
+      lParam = Context.Edi;
+    }
+    memset(&v31[2], 255, 16);
+    v31[0] = 139;
+    v31[1] = 149;
+    v31[6] = 233;
+    v16 = sub_1000158F(v7, (LPVOID)Context.Eip, v31, 7, 0x500);
+    if ( !v16 )
+    {
+      lpProcName[0] = v17;
+      a6 = lpProcName;
+      goto LABEL_13;
+    }
+    GOAddr(v7, v6, (LPVOID)(v16 + 11), &Context);
+    v18 = Context.Esi - Esi;
+    Esi -= Context.Edx;
+    v19 = v18 + 20;
+    v37[0] = 97;
+    v37[1] = 117;
+    v37[2] = 8;
+    v20 = FindMemory(v7, (char *)Context.Eip, v37, 3u, 0x500u);
+    if ( v20 )
+    {
+      GOAddr(v7, hThread, v20, &Context);
+      sub_100016F3(Context.Eax, Esi, v19, lParam);
+    }
+    else
+    {
+      HIWORD(a6) = 0x8503;
+      v22 = FindMemory(v7, (char *)Context.Eip, (char *)&a6 + 2, 2u, 0x500u);
+      if ( v22 )
+      {
+        v23 = v22 + 6;
+        lpProcName[0] = (LPCSTR)&Context;
+      }
+      else
+      {
+        v36[2] = -1;
+        v36[0] = 3;
+        v36[1] = -63;
+        v36[3] = -32;
+        v24 = FindMemory(v7, (char *)Context.Eip, v36, 4u, 0x500u);
+        if ( !v24 )
+        {
+          lpProcName[0] = v25;
+          lParam = (LPARAM)lpProcName;
+          MFC42_537(lpProcName, (int)&unk_10003408);
+          goto LABEL_23;
+        }
+        v23 = v24 + 2;
+        lpProcName[0] = (LPCSTR)&Context;
+      }
+      GOAddr(v7, hThread, v23, (LPCONTEXT)lpProcName[0]);
+      Eax = Context.Eax;
+      GOAddr(v7, hThread, (LPVOID)Context.Eax, &Context);
+      sub_100016F3(Eax, Esi, v19, lParam);
+    }
+    lpProcName[0] = v21;
+    a6 = lpProcName;
+    MFC42_537(lpProcName, (int)&unk_10003508);
+LABEL_23:
+    sub_10001683(v7, hThread, (char)lpProcName[0]);
+    goto LABEL_24;
+  }
+  lpProcName[0] = v11;
+  a6 = lpProcName;
+LABEL_13:
+  MFC42_537(lpProcName, (int)&unk_10003408);
+  sub_10001683(v7, v6, (char)lpProcName[0]);
+LABEL_24:
+  lpProcName[4] = (LPCSTR)&off_10001170;
+  return sub_10001E7F(v29);
+}

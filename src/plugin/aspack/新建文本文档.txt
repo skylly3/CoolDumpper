@@ -1,0 +1,148 @@
+    // ========== 第一轮特征搜索：8B 46 0C ==========
+    // 机器码：mov eax,[esi+0xC]
+    patternJmp[0] = 0x8B;
+    patternJmp[1] = 0x46;
+    patternJmp[2] = 0x0C;
+    pSearchRes1 = FindMemory(hTargetProcess, (char *)threadContext.Eip, patternJmp, 3u, 0x500u);
+
+    if (pSearchRes1 != nullptr)
+    {
+        // 切换线程EIP到此特征地址执行
+        GOAddr(hTargetProcess, hLocalThread, pSearchRes1, &threadContext);
+        esiBackup = threadContext.Esi;          // 备份当前ESI
+        HIWORD(a5) = 1673;
+
+        memset(nopBuffer, 0x90, sizeof(nopBuffer));
+        // 根据a5高2字节搜索2字节特征
+        pSearchRes2 = FindMemory(hTargetProcess, (char *)threadContext.Eip, ((char *)&a5 + 2), 2u, 0x500u);
+        if (!pSearchRes2)
+        {
+            // 未找到特征，跳转错误处理分支
+            lpProcName[0] = nullptr;
+            a6 = lpProcName;
+            goto LABEL_13;
+        }
+        // 内存写入NOP补丁
+        WriteMemory(hTargetProcess, pSearchRes2, nopBuffer, 8u, &bytesWritten);
+
+        // ========== 第二轮特征 C7 03 00 00 00 00 ==========
+        patternC[0] = 0xC7; patternC[1] = 0x03;
+        patternC[2] = 0x00; patternC[3] = 0x00;
+        patternC[4] = 0x00; patternC[5] = 0x00;
+        memset(patternB, 0x90, 6);
+        pSearchRes3 = FindMemory(hTargetProcess, (char *)threadContext.Eip, patternC, 6u, 0x500u);
+        if (pSearchRes3 != nullptr)
+        {
+            WriteMemory(hTargetProcess, pSearchRes3, patternB, 6u, &bytesWritten);
+        }
+
+        // ========== 第三轮短特征 FF 07 ==========
+        // FF 07 → call [edi]
+        shortPatSrc[0] = (char)-119; // 0xFF
+        shortPatSrc[1] = 0x07;       // 0x07
+        memset(shortPatNop, 0x90, sizeof(shortPatNop));
+
+        pSearchRes4 = FindMemory(hTargetProcess, (char *)threadContext.Eip, shortPatSrc, 2u, 0x500u);
+        lParamCtx = (LPARAM)pSearchRes4;
+
+        if (pSearchRes4 != nullptr)
+        {
+            // 指定条件下将call指令替换成两个NOP
+            if (a6 == (LPCSTR *)2)
+            {
+                WriteMemory(hTargetProcess, pSearchRes4, shortPatNop, 2u, &bytesWritten);
+            }
+            GOAddr(hTargetProcess, hLocalThread, (LPVOID)lParamCtx, &threadContext);
+            lParamCtx = threadContext.Edi;
+        }
+
+        // ========== 长序列特征初始化搜索 ==========
+        memset(&searchPattern[2], 0xFF, 16);
+        searchPattern[0] = 139;    //0x8B
+        searchPattern[1] = 149;    //0x95
+        searchPattern[6] = 233;    //0xE9
+
+        subFuncRet = sub_1000158F(hTargetProcess, (LPVOID)threadContext.Eip, searchPattern, 7, 0x500);
+        if (!subFuncRet)
+        {
+            lpProcName[0] = nullptr;
+            a6 = lpProcName;
+            goto LABEL_13;
+        }
+        // EIP跳转至特征偏移+11位置执行
+        GOAddr(hTargetProcess, hLocalThread, (LPVOID)(subFuncRet + 11), &threadContext);
+
+        // 寄存器差值运算
+        dwEsiDelta = threadContext.Esi - esiBackup;
+        esiBackup -= threadContext.Edx;
+        lParamTemp = dwEsiDelta + 20;
+
+        // ========== 特征 61 75 08 ==========
+        patternE[0] = 97;    //0x61
+        patternE[1] = 117;   //0x75
+        patternE[2] = 8;     //0x08
+        pSearchRes5 = FindMemory(hTargetProcess, (char *)threadContext.Eip, patternE, 3u, 0x500u);
+
+        if (pSearchRes5 != nullptr)
+        {
+            GOAddr(hTargetProcess, hThreadGlobal, pSearchRes5, &threadContext);
+            sub_100016F3(threadContext.Eax, esiBackup, lParamTemp, lParamCtx);
+        }
+        else
+        {
+            // 设置a6高字特征值，开始备选分支搜索
+            HIWORD(a6) = 0x8503;
+            pSearchRes6 = FindMemory(hTargetProcess, (char *)threadContext.Eip, ((char *)&a6 + 2), 2u, 0x500u);
+
+            char* targetExecAddr;
+            if (pSearchRes6 != nullptr)
+            {
+                targetExecAddr = pSearchRes6 + 6;
+                lpProcName[0] = (LPCSTR)&threadContext;
+            }
+            else
+            {
+                // 备选特征：03 C1 FF E0
+                patternD[0] = 3;
+                patternD[1] = (char)-63;  //0xC1
+                patternD[2] = (char)-1;   //0xFF
+                patternD[3] = (char)-32;  //0xE0
+                pSearchRes8 = FindMemory(hTargetProcess, (char *)threadContext.Eip, patternD, 4u, 0x500u);
+                if (!pSearchRes8)
+                {
+                    lpProcName[0] = nullptr;
+                    lParamCtx = (LPARAM)lpProcName;
+                    MFC42_537(lpProcName, (int)&unk_10003408);
+                    goto LABEL_23;
+                }
+                targetExecAddr = pSearchRes8 + 2;
+                lpProcName[0] = (LPCSTR)&threadContext;
+            }
+
+            // 切换线程执行备选地址
+            GOAddr(hTargetProcess, hThreadGlobal, targetExecAddr, (LPCONTEXT)lpProcName[0]);
+            eaxBackup = threadContext.Eax;
+            GOAddr(hTargetProcess, hThreadGlobal, (LPVOID)threadContext.Eax, &threadContext);
+            sub_100016F3(eaxBackup, esiBackup, lParamTemp, lParamCtx);
+        }
+
+        lpProcName[0] = nullptr;
+        a6 = lpProcName;
+        MFC42_537(lpProcName, (int)&unk_10003508);
+
+LABEL_23:
+        sub_10001683(hTargetProcess, hThreadGlobal, (char)lpProcName[0]);
+        goto LABEL_24;
+    }
+
+    // ========== 所有特征搜索失败统一处理分支 ==========
+    lpProcName[0] = nullptr;
+    a6 = lpProcName;
+LABEL_13:
+    MFC42_537(lpProcName, (int)&unk_10003408);
+    sub_10001683(hTargetProcess, hLocalThread, (char)lpProcName[0]);
+
+LABEL_24:
+    lpProcName[4] = (LPCSTR)&off_10001170;
+    return sub_10001E7F(stackBufLarge);
+}

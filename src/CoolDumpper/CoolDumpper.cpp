@@ -11,8 +11,21 @@
 
 #include "../disasm/disasm.h"
 
-
-#include "../debugger.h"
+#pragma data_seg (".skylly")
+const long MAX_BUFFER = 256;
+HINSTANCE g_hDLL = NULL;		    //DLL 的instance
+HWND  g_hWndList = NULL;			//脱壳机窗口
+char g_szNewMsg[256];				//消息缓存
+char g_szBackCode[256];			//代码备份
+char g_szAboutMe[MAX_BUFFER] = "CoolDumpper:";
+char g_szVersion[MAX_BUFFER] = "Ver 1.0 ";
+char g_szStartUnpack[MAX_BUFFER] = "Start Unpacking...";
+char g_szInitOk[MAX_BUFFER] = "初始化完毕!";
+char g_szError[MAX_BUFFER] = "你选错插件了吧!";
+char g_szOK[MAX_BUFFER] = "你是最棒的!";
+#pragma data_seg ()
+#include "../plugin/plugin.h"
+//#include "../debugger.h"
 
 #define MAX_LOADSTRING 100
 
@@ -932,7 +945,7 @@ BOOL ModifyIATOffset(LPCTSTR filePath, DWORD newIATRVA, DWORD newIATSize) {
     // 修改IAT的RVA
     iatDirectory->VirtualAddress = newIATRVA;
 	iatDirectory->Size = newIATSize;
-    printf("新IAT RVA: 0x%08X\n", newIATRVA);
+    printf("新IAT RVA: 0x%08X SIZE：0x%08X\n", newIATRVA, newIATSize);
 
     // 确保修改写入磁盘
     if (!FlushViewOfFile(lpBaseAddress, 0)) {
@@ -1455,6 +1468,22 @@ BOOL DumpFunc(HWND hDlg, HANDLE hProcess, HANDLE hThread, DWORD dwPID, DWORD dwO
 	return TRUE;
 }
 
+
+DWORD getImgBase(HANDLE hProcess)
+{
+	HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
+	pNtQueryInformationProcess NtQueryInformationProcess =
+		(pNtQueryInformationProcess)GetProcAddress(hNtdll, "NtQueryInformationProcess");
+	// 获取进程基本信息
+	PROCESS_BASIC_INFORMATION pbi = { 0 };
+	LONG status = NtQueryInformationProcess(
+		hProcess, 0, &pbi, sizeof(pbi), NULL
+	);
+	PVOID imageBaseAddress = NULL;
+	ReadProcessMemory(hProcess, (LPCVOID)((LPBYTE)pbi.PebBaseAddress + 0x08), &imageBaseAddress, sizeof(PVOID), NULL);
+	return (DWORD)imageBaseAddress;
+}
+
 //调试模式启动
 void DebugFile(LPCTSTR strFile)
 {
@@ -1465,10 +1494,11 @@ void DebugFile(LPCTSTR strFile)
 	//创建进程
 	if (CreateProcess(strFile, nullptr, NULL, NULL, FALSE, DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS, NULL, NULL, &startupInfo, &m_pi))
 	{
+		m_dwImageBase = getImgBase(m_pi.hProcess);
 		OutText(L"CreateProcess success");
 		BOOL ProcessExist = TRUE;
 		OutText(L"Debug Process Start");
-		UpkMgr mgr(m_pi.dwProcessId, m_pi.dwThreadId);
+		UpkMgr mgr(m_pi.dwProcessId, m_pi.dwThreadId, m_dwImageBase);
 		//hook api的地址
 		DWORD dwHookApi = 0;
 		bool bHookedApi = false;
@@ -1522,7 +1552,7 @@ void DebugFile(LPCTSTR strFile)
 						GetDlgItemTextA(m_hWnd, IDC_EDIT_OEP, szHookOep, MAX_PATH);
 						char* str = nullptr;
 						DWORD dwOep = strtol(szHookOep, &str, 16);
-						bHookedOep = mgr.AddBp(dwOep, bpType, "oep");
+						bHookedOep = mgr.addBp(dwOep, bpType, "oep");
 					}
 				}
 
@@ -1546,7 +1576,7 @@ void DebugFile(LPCTSTR strFile)
 							//加载了kerne32.dll以后，才能执行下面的下断点
 							HMODULE hKernel = LoadLibraryA("kernel32.dll");
 							dwHookApi = (DWORD)GetProcAddress(hKernel, szHookApi);
-							bHookedApi = mgr.AddBp(dwHookApi, bpType, szHookApi);
+							bHookedApi = mgr.addBp(dwHookApi, bpType, szHookApi);
 						}
 
 						break;
@@ -1557,7 +1587,7 @@ void DebugFile(LPCTSTR strFile)
 					std::string name = "";
 					if (mgr.isAtBps(dwAddr, name, false))
 					{//到达硬件断点
-						mgr.ClearBp(dwAddr, bpType);
+						mgr.clearBp(dwAddr, bpType);
 
 						std::string strInfo = "到达断点:";
 						strInfo += name.c_str();
@@ -1628,6 +1658,7 @@ void DebugFile(LPCTSTR strFile)
 	}
 }
 
+
 //加载文件，创建进程  用于给力模式，或者插件模式, 或者侦壳模式，或者反汇编模式
 //strFile=可执行程序名  strDllFile=要注入的插件名 bDetectShell=是否侦壳模式
 void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDisasmCode)
@@ -1665,19 +1696,7 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 		&startupInfo,
 		&m_pi
 	)) {
-
-		HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
-		pNtQueryInformationProcess NtQueryInformationProcess =
-			(pNtQueryInformationProcess)GetProcAddress(hNtdll, "NtQueryInformationProcess");
-		// 获取进程基本信息
-		PROCESS_BASIC_INFORMATION pbi = { 0 };
-		LONG status = NtQueryInformationProcess(
-			m_pi.hProcess, 0, &pbi, sizeof(pbi), NULL
-		);
-		PVOID imageBaseAddress = NULL;
-		ReadProcessMemory(m_pi.hProcess, (LPCVOID)((LPBYTE)pbi.PebBaseAddress + 0x08), &imageBaseAddress, sizeof(PVOID), NULL);
-
-		m_dwImageBase = (DWORD)imageBaseAddress;  //修正imagebase(某些exe开启了动态基址时)
+		m_dwImageBase = getImgBase(m_pi.hProcess);  //修正imagebase(某些exe开启了动态基址时)
 
 		if (m_hModPlugin && strDllFile)
 		{//插件模式
@@ -1688,25 +1707,30 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 			WriteProcessMemory(m_pi.hProcess, remoteMemory, strDllFile, (wcslen(strDllFile) + 1) * sizeof(TCHAR), nullptr);
 
 			// 在目标进程中创建一个远程线程来加载DLL
-			HANDLE hThread = CreateRemoteThread(m_pi.hProcess, nullptr, 0,
-				reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryW), remoteMemory, 0, nullptr);
-
-		
-			//调用插件的脱壳接口
-			startUnpackFunc(m_pi, m_dwImageBase, m_dwImageBase + m_dwEpRva);
-
+			HANDLE hThread = CreateRemoteThread(m_pi.hProcess, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(LoadLibraryW), remoteMemory, 0, nullptr);
 			if (hThread != nullptr)
 			{
-				// 等待远程线程完成
+				// 等待远程线程完成(插件dll被目标进程load进内存)
 				WaitForSingleObject(hThread, INFINITE);
 
-				// 关闭线程句柄
+				// 关闭远程线程句柄
 				CloseHandle(hThread);
 			}
 			else
 			{
 				OutText(L"Failed to create a remote thread.");
 			}
+			HWND comboBoxHandle = GetDlgItem(m_hWnd, IDC_CM_IAT); // 替换IDC_COMBOBOX为您的ComboBox控件ID
+			// 获取当前选中项的索引
+			int selectedIndex = SendMessage(comboBoxHandle, CB_GETCURSEL, 0, 0);
+			
+			//TCHAR szMsg[256];
+			//wsprintf(szMsg, L"startUnpackFunc base:%x index:%d", m_dwImageBase, selectedIndex);
+		    //MessageBox(m_hWnd, szMsg, TEXT("INFO"), MB_OK | MB_ICONWARNING);
+			
+			
+			//调用插件的脱壳接口
+			startUnpackFunc(m_pi, m_dwImageBase, selectedIndex/*m_dwEpRva*/);
 		}
 		else
 		{//给力模式 或者侦壳模式(寻找OEP)，或者反汇编模式	
@@ -1792,8 +1816,8 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 
 				HMODULE hKernel = LoadLibraryA("kernel32.dll");
 				DWORD dwAddr = (DWORD)GetProcAddress(hKernel, szHookApi);
-				UpkMgr mgr(m_pi.dwProcessId, m_pi.dwThreadId);
-				mgr.AddBp(dwAddr, UpkMgr::BT_SOFT, szHookApi);
+				UpkMgr mgr(m_pi.dwProcessId, m_pi.dwThreadId, m_dwImageBase);
+				mgr.addBp(dwAddr, UpkMgr::BT_SOFT, szHookApi);
 				int iCount = 10;
 				while (iCount--)
 				{
@@ -1809,9 +1833,9 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 					}
 					else if (iRet == 1)
 					{
-						mgr.ClearBp(dwAddr, UpkMgr::BT_SOFT);
-						CONTEXT ctx;
-						mgr.RTU(ctx);
+						mgr.clearBp(dwAddr, UpkMgr::BT_SOFT);
+						
+						mgr.rtu();
 
 						std::string strInfo = "到达断点:";
 						strInfo += strBpName.c_str();
@@ -1821,7 +1845,7 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 						if (MessageBox(m_hWnd, str.c_str(), TEXT("温馨提示"), MB_YESNO | MB_ICONQUESTION) == IDYES)
 						{
 							//dump
-							DumpFunc(m_hWnd, m_pi.hProcess, m_pi.hThread, m_pi.dwProcessId, ctx.Eip - m_dwImageBase, 0);
+							DumpFunc(m_hWnd, m_pi.hProcess, m_pi.hThread, m_pi.dwProcessId, mgr.getEip() - m_dwImageBase, 0);
 							break;
 						}
 					}

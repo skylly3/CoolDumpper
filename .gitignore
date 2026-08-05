@@ -1,0 +1,5 @@
+"*.pdb" 
+"*.iobj" 
+"*.ipdb" 
+"Debug/" 
+"Release/" 

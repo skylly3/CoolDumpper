@@ -1,16 +1,22 @@
 # Visual Studio 本地配置
 src/.vs/
 
+# Visual Studio 用户特定文件
+*.user
+*.clw
+*.res
+
 # Visual Studio IntelliSense 数据库
 *.VC.db
 *.VC.opendb
+*.opensdf
 *.sdf
+*.suo
 
 # 编译中间文件
 *.ilk
 *.obj
 *.lib
-*.user
 *.cd
 *.exe
 *.pch

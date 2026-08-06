@@ -154,14 +154,13 @@ public:
 			}
 			case BT_CC:
 			{//CC断点
-				CONTEXT context;
-				context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+				m_context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
 
-				if (GetThreadContext(m_hThread, &context))
+				if (GetThreadContext(m_hThread, &m_context))
 				{
 					//4. 修正EIP
-					context.Eip--;
-					SetThreadContext(m_hThread, &context);
+					m_context.Eip--;
+					SetThreadContext(m_hThread, &m_context);
 				}
 
 				if (!clrSoftCC(dwAddr, iter->second.szOriCode))
@@ -197,9 +196,8 @@ public:
 	{
 		if (bSuspend)
 			::SuspendThread(m_hThread);
-		CONTEXT context;
-		context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		BOOL bOk = ::GetThreadContext(m_hThread, &context);
+		m_context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
+		BOOL bOk = ::GetThreadContext(m_hThread, &m_context);
 		assert(bOk);
 		if (!bOk)
 			return -1;
@@ -211,10 +209,10 @@ public:
 			{
 			case BT_HARD:
 			{//硬件断点
-			 //硬件断点触发时，dr6必定设置了
-				if ((context.Dr6 & 0xF) == 0)
+			    //硬件断点触发时，dr6必定设置了
+				if ((m_context.Dr6 & 0xF) == 0)
 					break;
-				if (context.Eip == iter->second.addr)
+				if (m_context.Eip == iter->second.addr)
 				{
 					dwAddr = iter->second.addr;
 					name = iter->second.name;
@@ -224,7 +222,7 @@ public:
 			}
 			case BT_SOFT:
 			{//EBFE软件断点
-				if (context.Eip == iter->second.addr)
+				if (m_context.Eip == iter->second.addr)
 				{
 					dwAddr = iter->second.addr;
 					name = iter->second.name;
@@ -234,7 +232,7 @@ public:
 			}
 			case BT_CC:
 			{//CC断点
-				if (context.Eip == (iter->second.addr + 1))   //CC断点有些特殊，当前EIP比设置的CC位置多一个字节
+				if (m_context.Eip == (iter->second.addr + 1))   //CC断点有些特殊，当前EIP比设置的CC位置多一个字节
 				{
 					dwAddr = iter->second.addr;
 					name = iter->second.name;
@@ -330,25 +328,27 @@ protected:
 	//到指定地址--内部方法
 	bool GO(HANDLE hProcess, HANDLE hThread, DWORD dwAddress, CONTEXT& context)
 	{
-		unsigned char szBackCode[10];
-		setSoftBP(dwAddress, szBackCode);
-		context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		BOOL bOk = ::GetThreadContext(hThread, &context);
-		assert(bOk);
-		DWORD dwCurEip = context.Eip;
+		if (!addBp(dwAddress, BT_SOFT, nullptr))
+			return false;
+		bool bRet = false;
 		int iCount = 10;
-		while ((dwCurEip != dwAddress) && (iCount--))
+		while (iCount--)
 		{
 			resume();
-			::Sleep(1000);
-			::SuspendThread(m_hThread);
-			dwCurEip = getEip();
+			::Sleep(500);
+			DWORD dwAddr = 0;
+			std::string strName = "";
+			int iRet = isAtBps(dwAddr, strName);
+			if (-1 == iRet)
+				break;  //出错
+			if (1 == iRet)
+			{//成功
+				bRet = true;
+				break;
+			}
 		}
-		clrSoftBP(dwAddress, szBackCode);
-		context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-		bOk = ::GetThreadContext(hThread, &context);
-		assert(bOk);
-		return true;
+		clearBp(dwAddress, BT_SOFT);
+		return bRet;
 	}
 	bool setSoftBP(DWORD dwAddress, unsigned char* szBackCode)
 	{

@@ -150,6 +150,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="cooldebug.def" />
     <None Include="res\cooldebug.rc2" />
   </ItemGroup>
@@ -158,6 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\debugger.h" />
+    <ClInclude Include="..\plugin.h" />
     <ClInclude Include="cooldebug.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="StdAfx.h" />

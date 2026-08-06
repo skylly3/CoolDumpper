@@ -9,6 +9,9 @@ src/.vs/
 # 编译中间文件
 *.ilk
 *.obj
+*.lib
+*.user
+*.cd
 *.exe
 *.pch
 *.idb
@@ -24,3 +27,4 @@ Debug/
 Release/
 bin/
 obj/
+ipch/

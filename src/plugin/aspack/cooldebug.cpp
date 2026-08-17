@@ -36,8 +36,8 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	mgr.go(dwFree);
 	mgr.rtu();
 	
-	UCHAR patternJmp[] = {0x8B, 0x46, 0x0c};  //机器码：mov eax,[esi+0xC]
-	DWORD dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp, sizeof(patternJmp), 0x500);
+	uint16_t patternJmp[] = {0x8B, 0x46, 0x0c};  //机器码：mov eax,[esi+0xC]
+	DWORD dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp, ARRAY_LEN(patternJmp), 0x500);
 	if (0 == dwNewEip)
 	{
 		TellUnpacker(g_szError);
@@ -47,39 +47,39 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	DWORD dwIdtStart = mgr.getEsi();
 	
 	
-	UCHAR patternJmp2[] = {0x89, 0x06};  //机器码： mov [esi],eax
-	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp2, sizeof(patternJmp2), 0x500);
+	uint16_t patternJmp2[] = {0x89, 0x06};  //机器码： mov [esi],eax
+	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp2, ARRAY_LEN(patternJmp2), 0x500);
 	if (0 == dwNewEip)
 	{
 		TellUnpacker(g_szError);
 		return;
 	}
 	UCHAR nopJmp2[] = {0x90, 0x90, 0x90, 0x90,0x90, 0x90,0x90, 0x90}; 
-	mgr.writeMemory(dwNewEip, nopJmp2, sizeof(nopJmp2));
+	mgr.writeMemory(dwNewEip, nopJmp2, ARRAY_LEN(nopJmp2));
 	 
 	
-	UCHAR patternJmp3[] = {0xC7, 0x03, 0x00, 0x00, 0x00, 0x00};  //机器码： mov [ebx],0
-	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp3, sizeof(patternJmp3), 0x500);
+	uint16_t patternJmp3[] = {0xC7, 0x03, 0x00, 0x00, 0x00, 0x00};  //机器码： mov [ebx],0
+	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp3, ARRAY_LEN(patternJmp3), 0x500);
 	if (0 != dwNewEip)
 	{
 		UCHAR nopJmp3[] = { 0x90, 0x90, 0x90, 0x90,0x90, 0x90 };
-		mgr.writeMemory(dwNewEip, nopJmp3, sizeof(nopJmp3));
+		mgr.writeMemory(dwNewEip, nopJmp3, ARRAY_LEN(nopJmp3));
 	}
 
-	UCHAR patternJmp4[] = {0xff, 0x07};  //机器码： INC DWORD PTR DS:[EDI]  //call [edi]
-	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp4, sizeof(patternJmp4), 0x500);
+	uint16_t patternJmp4[] = {0xff, 0x07};  //机器码： INC DWORD PTR DS:[EDI]  //call [edi]
+	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp4, ARRAY_LEN(patternJmp4), 0x500);
 	if (0 != dwNewEip)
 	{
 		if (dwFixType == 2)
 		{
 			UCHAR nopJmp4[] = {0x90, 0x90}; 
-			mgr.writeMemory(dwNewEip, nopJmp4, sizeof(nopJmp4));
+			mgr.writeMemory(dwNewEip, nopJmp4, ARRAY_LEN(nopJmp4));
 		}
 		mgr.go(dwNewEip);
 		DWORD dwEdi = mgr.getEdi();
 	}
-	UCHAR patternJmp5[] = { 0x8b, 0x95, -1, -1, -1, -1, 0xe9 };  //机器码:MOV EDX,DWORD PTR SS:[EBP+488];jmp const
-	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp5, sizeof(patternJmp5), 0x500);
+	uint16_t patternJmp5[] = { 0x8b, 0x95, -1, -1, -1, -1, 0xe9 };  //机器码:MOV EDX,DWORD PTR SS:[EBP+488];jmp const
+	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp5, ARRAY_LEN(patternJmp5), 0x500);
 	if (0 == dwNewEip)
 	{
 		TellUnpacker(g_szError);
@@ -91,8 +91,8 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	dwIdtStart -= dwImgBase;
 
 	//下面跳OEP
-	UCHAR patternJmp6[] = { 0x61, 0x75, 0x08 };  //机器码:POPAD;JNE SHORT 00A17420
-	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp6, sizeof(patternJmp6), 0x500);
+	uint16_t patternJmp6[] = { 0x61, 0x75, 0x08 };  //机器码:POPAD;JNE SHORT 00A17420
+	dwNewEip = mgr.findMemory(mgr.getEip(), patternJmp6, ARRAY_LEN(patternJmp6), 0x500);
 	if (0 == dwNewEip)
 	{
 		TellUnpacker(g_szError);
@@ -103,7 +103,7 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 
 
 	/*UCHAR szIatCode[] = { 0x8B, 0x18, 0x8B, 0x7E, 0x10, 0x03, 0xFA };
-	dwNewEip = mgr.findMemory(mgr.getEP(), szIatCode, sizeof(szIatCode));
+	dwNewEip = mgr.findMemory(mgr.getEP(), szIatCode, ARRAY_LEN(szIatCode));
 	if (0 == dwNewEip)
 	{
 		TellUnpacker(g_szError);

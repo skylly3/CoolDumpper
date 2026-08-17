@@ -29,8 +29,8 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	//发消息表示开始脱壳
 	TellUnpacker(g_szStartUnpack);
 
-	UCHAR szIatCode[] = {0x50, 0x83, 0xC7};
-	DWORD dwNewEip = mgr.findMemory(mgr.getEP(), szIatCode, sizeof(szIatCode));
+	uint16_t szIatCode[] = {0x50, 0x83, 0xC7};
+	DWORD dwNewEip = mgr.findMemory(mgr.getEP(), szIatCode, ARRAY_LEN(szIatCode));
 	if (0 == dwNewEip)
 	{ 
 		TellUnpacker(g_szError);
@@ -39,17 +39,17 @@ extern "C" void WINAPI StartUnpack(PROCESS_INFORMATION pi, DWORD dwBaseAddress, 
 	mgr.go(dwNewEip);
 	DWORD dwIAT = mgr.getEbx();
 
-	UCHAR szMagicCode[] = {0x61, 0xE9};
+	uint16_t szMagicCode[] = {0x61, 0xE9};
 	int iAdd = 1;
-	DWORD dwCoolEip = mgr.findMemory(dwNewEip, szMagicCode, sizeof(szMagicCode), 0x1000);
+	DWORD dwCoolEip = mgr.findMemory(dwNewEip, szMagicCode, ARRAY_LEN(szMagicCode), 0x1000);
 	if (0 == dwCoolEip)
 	{	
-		UCHAR szMagicCode[] = {0x6A, 0x00};
-		dwCoolEip = mgr.findMemory(dwNewEip, szMagicCode, sizeof(szMagicCode), 0x100);
+		uint16_t szMagicCode[] = {0x6A, 0x00};
+		dwCoolEip = mgr.findMemory(dwNewEip, szMagicCode, ARRAY_LEN(szMagicCode), 0x100);
 		if (0 == dwCoolEip)
 		{
-			UCHAR szMagicCode[] = {0x60, 0xE9};
-			dwCoolEip = mgr.findMemory(dwNewEip, szMagicCode, sizeof(szMagicCode), 0x100);
+			uint16_t szMagicCode[] = {0x60, 0xE9};
+			dwCoolEip = mgr.findMemory(dwNewEip, szMagicCode, ARRAY_LEN(szMagicCode), 0x100);
 			if (0 == dwCoolEip)
 			{
 				TellUnpacker(g_szError);

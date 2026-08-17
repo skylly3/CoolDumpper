@@ -452,27 +452,28 @@ bool DetectShell(const char* pCodeBase, const DWORD dwCodeSize, const char* pEnt
 	}
 	else
 	{
-		for (int iOffset = 0; (iOffset + len) < dwCodeSize; iOffset++)
-		{
-			bFindShell = true;
-			for (int i = 0; i < len; i++)
-			{
-				ch1 = *(pCodeBase + iOffset + i);
-				if (sSign.substr(i * 3, 2) == "??")
-					continue;  //万能匹配符号
-				ch2 = GetHexValue(sSign, i);
-				if (ch1 != ch2)
-				{//一票否决
-					bFindShell = false;
-					break;
-				}
-			}
-			if (bFindShell)
-			{//找到了匹配的
-				iFindOff = iOffset;
-				break;
-			}
-		}
+		bFindShell = false;
+		//for (int iOffset = 0; (iOffset + len) < dwCodeSize; iOffset++)
+		//{
+		//	bFindShell = true;
+		//	for (int i = 0; i < len; i++)
+		//	{
+		//		ch1 = *(pCodeBase + iOffset + i);
+		//		if (sSign.substr(i * 3, 2) == "??")
+		//			continue;  //万能匹配符号
+		//		ch2 = GetHexValue(sSign, i);
+		//		if (ch1 != ch2)
+		//		{//一票否决
+		//			bFindShell = false;
+		//			break;
+		//		}
+		//	}
+		//	if (bFindShell)
+		//	{//找到了匹配的
+		//		iFindOff = iOffset;
+		//		break;
+		//	}
+		//}
 	}
 	return bFindShell;
 }
@@ -685,7 +686,7 @@ std::wstring _GetShell(const std::wstring& _FileName)
 				//壳名称转换成大写
 				std::wstring wstrShell = strShell;
 				transform(wstrShell.begin(), wstrShell.end(), wstrShell.begin(), ::toupper);
-				if (strShell.find(sPluginName) != -1)
+				if (wstrShell.find(sPluginName) != -1)
 				{
 					SendMessage(hCmbPlug, CB_SETCURSEL, i, 0);
 					OnCbnSelchangeCmPlug();
@@ -809,13 +810,13 @@ void LoadFile(const std::wstring& sFileName)
 
 	if (m_dwImageBase != 0)
 	{
-		std::wstring strEp = format(L"模块基地址:%08x", m_dwImageBase);
+		std::wstring strEp = format(L"模块基地址:0x%08X", m_dwImageBase);
 		OutText(strEp);
 	}
 
 	if (m_dwEpRva != 0)
 	{
-		std::wstring strEp = format(L"当前入口点:%08x", m_dwEpRva);
+		std::wstring strEp = format(L"当前入口点:0x%08X", m_dwEpRva);
 		OutText(strEp);
 	}
 	else
@@ -1235,7 +1236,7 @@ void DisasmCode(HWND hWindList, DWORD dwAddress)
 		{
 			ulong uRet = pDisasm(szBuf + iOffset, 10, dwAddress + iOffset, &da, DISASM_CODE);
 
-			std::wstring strAddr = format(L"%08x", dwAddress + iOffset);
+			std::wstring strAddr = format(L"%08X", dwAddress + iOffset);
 			std::wstring strDump = CA2CT(da.dump, CP_ACP);
 			std::wstring strDisasm = CA2CT(da.result, CP_ACP);
 			// 1. 先添加一行数据，并且设置第一列的信息
@@ -1281,9 +1282,9 @@ INT_PTR CALLBACK DumpperWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 		ListView_InsertColumn(hWindList, 2, &lvColumn);
 
 		SetDlgItemText(hDlg, IDC_EDIT_FILENAME, g_dumpPara.strSaveName.c_str());
-		std::wstring strText = format(L"%08x", g_dumpPara.dwOepVA);
+		std::wstring strText = format(L"%08X", g_dumpPara.dwOepVA);
 		SetDlgItemText(hDlg, IDC_EDIT_OEPVA, strText.c_str());
-		strText = format(L"%08x", g_dumpPara.dwIatVA);
+		strText = format(L"%08X", g_dumpPara.dwIatVA);
 		SetDlgItemText(hDlg, IDC_EDIT_IATVA, strText.c_str());
 
 
@@ -1324,7 +1325,7 @@ INT_PTR CALLBACK DumpperWndProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 
 			if (GetThreadContext(g_dumpPara.hThread, &context))
 			{
-				std::wstring strPid = format(L"%08x", context.Eip);
+				std::wstring strPid = format(L"%08X", context.Eip);
 				SetDlgItemText(hDlg, IDC_EDIT_OEPVA, strPid.c_str());
 			}
 			else
@@ -1778,7 +1779,7 @@ void CreateProc(LPCTSTR strFile, LPCTSTR strDllFile, bool bDetectShell, bool bDi
 								OutText(str);
 
 								DWORD dwOEP = m_dwImageBase + imNT_Headers->OptionalHeader.BaseOfCode + iFindOff;
-								std::wstring strOep = format(L"%08x", dwOEP);
+								std::wstring strOep = format(L"%08X", dwOEP);
 								SetWindowText(GetDlgItem(m_hWnd, IDC_EDIT_OEP), strOep.c_str());
 								break;
 							}
@@ -2100,7 +2101,7 @@ LRESULT OnDumpNow(WPARAM wParam, LPARAM lParam)
 		g_dumpPara.dwItdVA = wParam;
 		g_dumpPara.dwItdSize = lParam;
 
-		std::wstring str = format(L"开始Dump OEP VA=%08x IAT VA=%08x ITD VA=%08x, size=%08x", g_dumpPara.dwOepVA, g_dumpPara.dwIatVA, g_dumpPara.dwItdVA, g_dumpPara.dwItdSize);
+		std::wstring str = format(L"开始Dump OEP VA=0x%08X IAT VA=0x%08X ITD VA=0x%08X, size=0x%08X", g_dumpPara.dwOepVA, g_dumpPara.dwIatVA, g_dumpPara.dwItdVA, g_dumpPara.dwItdSize);
 		OutText(str);
 
 		DumpFunc(m_hWnd, m_pi.hProcess, m_pi.hThread, m_pi.dwProcessId, g_dumpPara.dwOepVA - m_dwImageBase, g_dumpPara.dwIatVA - m_dwImageBase);
@@ -2583,7 +2584,7 @@ BOOL CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_dumpPara.dwOepVA = wParam;
 		g_dumpPara.dwIatVA = lParam;
 
-		std::wstring str = format(L"设置OEP:0x%08x IAT:0x%08x BaseAddr:0x%08x", g_dumpPara.dwOepVA, g_dumpPara.dwIatVA, m_dwImageBase);
+		std::wstring str = format(L"设置OEP:0x%08X IAT:0x%08X BaseAddr:0x%08X", g_dumpPara.dwOepVA, g_dumpPara.dwIatVA, m_dwImageBase);
 		OutText(str);
 		break;
 	}
@@ -2591,7 +2592,7 @@ BOOL CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{	
 		if (message > WM_USER)
 		{
-			std::wstring str = format(L"未知消息:0x%08x", message);
+			std::wstring str = format(L"未知消息:0x%08X", message);
 			OutText(str);
 		}
 

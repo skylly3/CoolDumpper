@@ -42,7 +42,7 @@ public:
 		m_dwEntryPoint = GetEntryPoint(m_hProcess, m_dwBaseAddress);
 
 		char msg[100];
-		sprintf(msg, "eip:%8x entry:%8x", m_context.Eip, m_dwEntryPoint);
+		sprintf(msg, "Eip:0x%08X Entry:0x%08X", m_context.Eip, m_dwEntryPoint);
 		tellUnpacker(msg);
 
 	}
@@ -282,12 +282,12 @@ public:
 		return GO(m_hProcess, m_hThread, dwAddress, m_context);
 	}
 	//ÄÚ´æ²éÕÒ
-	DWORD findMemory(DWORD dwStartAddress, const UCHAR* pTargetStr, long lStrSize, long lSerchSize = 0x1000)
+	DWORD findMemory(DWORD dwStartAddress, const uint16_t* pTargetStr, long lStrSize, long lSerchSize = 0x1000)
 	{
 		return ::FindMemory(m_hProcess, dwStartAddress, pTargetStr, lStrSize, lSerchSize);
 	}
 	//ÄÚ´æÌæ»»
-	void replaceMemory(DWORD dwStartAddress, const UCHAR* pTargetStr, const UCHAR* pReplStr, long lStrSize, long lReplSize = 0)
+	void replaceMemory(DWORD dwStartAddress, const uint16_t* pTargetStr, const UCHAR* pReplStr, long lStrSize, long lReplSize = 0)
 	{
 		return ::ReplaceMemory(m_hProcess, dwStartAddress, pTargetStr, pReplStr, lStrSize, lReplSize);
 	}

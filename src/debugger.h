@@ -10,6 +10,11 @@ const DWORD WM_DUMPNOW = WM_USER + 105;         					//请求DUMP
 
 const DWORD WM_PLUGINMSG_END = WM_USER + 300;						//消息结束
 
+//#define ARRAY_LEN(arr) (sizeof(arr) / sizeof((arr)[0]))
+template <typename T, size_t N>
+constexpr size_t ARRAY_LEN(T(&)[N]) noexcept {
+	return N;
+}
 																	//#define IDC_CHECK_LOG                   1036
 #define IDC_CHECK_DEBUGGER              1066
 #include <assert.h>
@@ -133,7 +138,7 @@ bool WriteMemory(HANDLE hProcess, DWORD dwAddress, LPVOID lpBuffer, SIZE_T nSize
 }
 
 //内存查找（支持通配符，0xFF匹配任意字节）
-DWORD FindMemory(HANDLE hProcess, DWORD dwStartAddress, const UCHAR* pTargetStr, long lStrSize, long lSerchSize = 0x1000)
+DWORD FindMemory(HANDLE hProcess, DWORD dwStartAddress, const uint16_t* pTargetStr, long lStrSize, long lSerchSize = 0x1000)
 {
     DWORD dwResult = 0;
     UCHAR tempBuff[0x1000];
@@ -152,12 +157,12 @@ DWORD FindMemory(HANDLE hProcess, DWORD dwStartAddress, const UCHAR* pTargetStr,
         // 逐字节比较，支持通配符
         for (long i = 0; i < lStrSize; i++)
         {
-            // 如果模式字节是0xFF，则跳过比较（匹配任意字节）
-            if (pTargetStr[i] == 0xFF)
+            // 如果模式字节是-1，则跳过比较（匹配任意字节）
+            if (pTargetStr[i] == uint16_t(-1))
                 continue;
             
             // 否则必须完全匹配
-            if (tempBuff[lOffset + i] != pTargetStr[i])
+            if (tempBuff[lOffset + i] != (uint8_t)(pTargetStr[i]))
             {
                 bMatch = false;
                 break;
@@ -175,7 +180,7 @@ DWORD FindMemory(HANDLE hProcess, DWORD dwStartAddress, const UCHAR* pTargetStr,
 }
 
 //内存替换
-void ReplaceMemory(HANDLE hProcess, DWORD dwStartAddress, const UCHAR* pTargetStr, const UCHAR* pReplStr, long lStrSize, long lReplSize = 0)
+void ReplaceMemory(HANDLE hProcess, DWORD dwStartAddress, const uint16_t* pTargetStr, const UCHAR* pReplStr, long lStrSize, long lReplSize = 0)
 {
 	if (lReplSize == 0)
 		lReplSize = lStrSize;
